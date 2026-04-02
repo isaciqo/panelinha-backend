@@ -53,6 +53,7 @@ class LeaveEventOperation {
       id: event.event_id,
       sport: event.sport,
       totalPlayers: event.totalPlayers,
+      duration: event.duration,
       clubName: event.clubName,
       location: event.location,
       city: event.city,

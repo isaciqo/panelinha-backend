@@ -2,10 +2,11 @@ const { v4: uuidv4 } = require('uuid');
 const AppError = require('../../../interfaces/http/errors/AppError');
 
 class JoinEventOperation {
-  constructor({ eventRepository, participationRepository, userRepository }) {
+  constructor({ eventRepository, participationRepository, userRepository, userBlockRepository }) {
     this.eventRepository = eventRepository;
     this.participationRepository = participationRepository;
     this.userRepository = userRepository;
+    this.userBlockRepository = userBlockRepository;
   }
 
   async execute(event_id, userId) {
@@ -26,6 +27,14 @@ class JoinEventOperation {
     const totalOccupied = event.participants.length + (event.preFilledPlayers || 0);
     if (totalOccupied >= event.totalPlayers) {
       throw new AppError('EVENT_FULL', 'O evento está lotado', 400);
+    }
+
+    const [blockedByMe, blockedByCreator] = await Promise.all([
+      this.userBlockRepository.exists(userId, event.creatorId),
+      this.userBlockRepository.exists(event.creatorId, userId),
+    ]);
+    if (blockedByMe || blockedByCreator) {
+      throw new AppError('USER_BLOCKED', 'Não é possível entrar neste evento devido a um bloqueio', 400);
     }
 
     const user = await this.userRepository.findById(userId);
@@ -63,6 +72,7 @@ class JoinEventOperation {
       id: event.event_id,
       sport: event.sport,
       totalPlayers: event.totalPlayers,
+      duration: event.duration,
       clubName: event.clubName,
       location: event.location,
       city: event.city,

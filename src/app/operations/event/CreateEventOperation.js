@@ -7,7 +7,7 @@ class CreateEventOperation {
     this.userRepository = userRepository;
   }
 
-  async execute({ sport, totalPlayers, clubName, location, city, dateTime, pricePerPerson, preFilledPlayers = 0 }, creatorId) {
+  async execute({ sport, totalPlayers, duration, clubName, location, city, dateTime, pricePerPerson, preFilledPlayers = 0 }, creatorId) {
     const eventDate = new Date(dateTime);
     if (eventDate <= new Date()) {
       throw new AppError('PAST_DATE', 'A data/hora do evento deve ser no futuro', 400);
@@ -25,6 +25,7 @@ class CreateEventOperation {
       event_id,
       sport,
       totalPlayers,
+      duration,
       clubName,
       location,
       city,
@@ -56,6 +57,7 @@ class CreateEventOperation {
       id: event.event_id,
       sport: event.sport,
       totalPlayers: event.totalPlayers,
+      duration: event.duration,
       clubName: event.clubName,
       location: event.location,
       city: event.city,

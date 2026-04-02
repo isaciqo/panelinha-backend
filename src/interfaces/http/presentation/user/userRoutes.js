@@ -3,6 +3,43 @@ const userSchemas = require('./userSchemas')();
 
 module.exports = [
   {
+    method: 'post',
+    path: '/users/:id/block',
+    handler: 'userController.blockUser',
+    middlewares: [authMiddleware],
+    validation: { params: userSchemas.getById },
+    swagger: {
+      tags: ['Users'],
+      summary: 'Bloquear um usuário',
+      security: [{ BearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+      responses: {
+        204: { description: 'Usuário bloqueado' },
+        400: { description: 'INVALID_INPUT' },
+        401: { description: 'UNAUTHORIZED' },
+        404: { description: 'USER_NOT_FOUND' },
+      },
+    },
+  },
+  {
+    method: 'delete',
+    path: '/users/:id/block',
+    handler: 'userController.unblockUser',
+    middlewares: [authMiddleware],
+    validation: { params: userSchemas.getById },
+    swagger: {
+      tags: ['Users'],
+      summary: 'Desbloquear um usuário',
+      security: [{ BearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+      responses: {
+        204: { description: 'Usuário desbloqueado' },
+        401: { description: 'UNAUTHORIZED' },
+        404: { description: 'USER_NOT_FOUND' },
+      },
+    },
+  },
+  {
     method: 'get',
     path: '/users',
     handler: 'userController.listUsers',

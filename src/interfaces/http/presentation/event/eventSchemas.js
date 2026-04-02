@@ -7,6 +7,7 @@ module.exports = () => ({
   create: Joi.object({
     sport: Joi.string().valid(...VALID_SPORTS).required(),
     totalPlayers: Joi.number().integer().min(2).max(50).required(),
+    duration: Joi.number().integer().min(15).max(480).required(),
     clubName: Joi.string().min(2).max(200).required(),
     location: Joi.string().min(2).max(200).required(),
     city: Joi.string().min(2).max(100).required(),
@@ -18,6 +19,7 @@ module.exports = () => ({
   update: Joi.object({
     sport: Joi.string().valid(...VALID_SPORTS).optional(),
     totalPlayers: Joi.number().integer().min(2).max(50).optional(),
+    duration: Joi.number().integer().min(15).max(480).optional(),
     clubName: Joi.string().min(2).max(200).optional(),
     location: Joi.string().min(2).max(200).optional(),
     city: Joi.string().min(2).max(100).optional(),

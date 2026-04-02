@@ -25,7 +25,7 @@ class EventController {
   }
 
   async listEvents(req, res) {
-    const result = await this.listEventsOperation.execute(req.query);
+    const result = await this.listEventsOperation.execute(req.query, req.user.user_id);
     res.status(200).json(result);
   }
 

@@ -1,11 +1,16 @@
 class ListEventsOperation {
-  constructor({ eventRepository }) {
+  constructor({ eventRepository, userBlockRepository }) {
     this.eventRepository = eventRepository;
+    this.userBlockRepository = userBlockRepository;
   }
 
-  async execute({ page = 1, limit = 20, sport, city, date, status } = {}) {
+  async execute({ page = 1, limit = 20, sport, city, date, status } = {}, requesterId) {
     const safePage = Math.max(Number(page), 1);
     const safeLimit = Math.min(Number(limit), 100);
+
+    const blockedIds = requesterId
+      ? await this.userBlockRepository.getBlockedIdsBidirectional(requesterId)
+      : [];
 
     const { data, total } = await this.eventRepository.findAll({
       page: safePage,
@@ -14,6 +19,7 @@ class ListEventsOperation {
       city,
       date,
       status,
+      excludeCreatorIds: blockedIds,
     });
 
     return {

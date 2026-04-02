@@ -15,6 +15,7 @@ const eventSchema = new mongoose.Schema({
     enum: ['volleyball', 'football', 'basketball', 'tennis', 'other'],
   },
   totalPlayers: { type: Number, required: true, min: 2, max: 50 },
+  duration: { type: Number, required: true, min: 15, max: 480 },
   clubName: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
   city: { type: String, required: true, trim: true },

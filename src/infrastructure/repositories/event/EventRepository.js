@@ -7,6 +7,7 @@ class EventRepository {
       id: event.event_id,
       sport: event.sport,
       totalPlayers: event.totalPlayers,
+      duration: event.duration,
       clubName: event.clubName,
       location: event.location,
       city: event.city,
@@ -35,13 +36,14 @@ class EventRepository {
     return Event.findOneAndUpdate({ event_id }, data, { new: true });
   }
 
-  async findAll({ page = 1, limit = 20, sport, city, date, status } = {}) {
+  async findAll({ page = 1, limit = 20, sport, city, date, status, excludeCreatorIds = [] } = {}) {
     const skip = (page - 1) * limit;
     const query = {};
 
     if (sport) query.sport = sport;
     if (status) query.status = status;
     if (city) query.city = { $regex: city, $options: 'i' };
+    if (excludeCreatorIds.length > 0) query.creatorId = { $nin: excludeCreatorIds };
     if (date) {
       const start = new Date(date);
       start.setUTCHours(0, 0, 0, 0);
