@@ -31,6 +31,7 @@ const eventSchema = new mongoose.Schema({
     default: 'open',
   },
   participants: { type: [participantSchema], default: [] },
+  kickedUsers: { type: [String], default: [] },
 }, { timestamps: true });
 
 eventSchema.index({ city: 'text' });

@@ -30,6 +30,7 @@ class KickParticipantOperation {
 
     const updated = await this.eventRepository.update(event_id, {
       $pull: { participants: { userId: targetUserId } },
+      $addToSet: { kickedUsers: targetUserId },
     });
 
     return this._format(updated);
@@ -52,6 +53,7 @@ class KickParticipantOperation {
       creatorName: event.creatorName,
       status: event.status,
       participants: event.participants,
+      kickedUsers: event.kickedUsers || [],
       createdAt: event.createdAt,
     };
   }

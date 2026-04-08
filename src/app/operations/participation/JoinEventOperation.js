@@ -24,6 +24,11 @@ class JoinEventOperation {
       throw new AppError('ALREADY_PARTICIPANT', 'Você já está participando deste evento', 400);
     }
 
+    const wasKicked = (event.kickedUsers || []).includes(userId);
+    if (wasKicked) {
+      throw new AppError('USER_KICKED', 'Você foi removido deste evento pelo criador', 403);
+    }
+
     const totalOccupied = event.participants.length + (event.preFilledPlayers || 0);
     if (totalOccupied >= event.totalPlayers) {
       throw new AppError('EVENT_FULL', 'O evento está lotado', 400);
@@ -84,6 +89,7 @@ class JoinEventOperation {
       creatorName: event.creatorName,
       status: event.status,
       participants: event.participants,
+      kickedUsers: event.kickedUsers || [],
       createdAt: event.createdAt,
     };
   }

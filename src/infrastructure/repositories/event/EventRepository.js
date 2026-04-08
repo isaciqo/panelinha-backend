@@ -19,6 +19,7 @@ class EventRepository {
       creatorName: event.creatorName,
       status: event.status,
       participants: event.participants,
+      kickedUsers: event.kickedUsers || [],
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     };
