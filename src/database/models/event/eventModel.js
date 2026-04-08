@@ -22,6 +22,7 @@ const eventSchema = new mongoose.Schema({
   dateTime: { type: Date, required: true },
   pricePerPerson: { type: Number, required: true, min: 0 },
   preFilledPlayers: { type: Number, default: 0, min: 0 },
+  skillLevel: { type: Number, default: 0, min: 0, max: 5 },
   creatorId: { type: String, required: true },
   creatorName: { type: String, required: true },
   status: {

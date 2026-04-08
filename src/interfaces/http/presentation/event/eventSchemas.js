@@ -14,6 +14,7 @@ module.exports = () => ({
     dateTime: Joi.date().iso().greater('now').required(),
     pricePerPerson: Joi.number().min(0).required(),
     preFilledPlayers: Joi.number().integer().min(0).default(0),
+    skillLevel: Joi.number().valid(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5).default(0),
   }),
 
   update: Joi.object({
@@ -26,7 +27,12 @@ module.exports = () => ({
     dateTime: Joi.date().iso().greater('now').optional(),
     pricePerPerson: Joi.number().min(0).optional(),
     preFilledPlayers: Joi.number().integer().min(0).optional(),
+    skillLevel: Joi.number().valid(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5).optional(),
   }).min(1),
+
+  kick: Joi.object({
+    userId: Joi.string().uuid().required(),
+  }),
 
   getById: Joi.object({
     id: Joi.string().uuid().required(),

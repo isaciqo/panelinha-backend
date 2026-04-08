@@ -8,6 +8,7 @@ class EventController {
     cancelEventOperation,
     joinEventOperation,
     leaveEventOperation,
+    kickParticipantOperation,
   }) {
     this.createEventOperation = createEventOperation;
     this.listEventsOperation = listEventsOperation;
@@ -17,6 +18,7 @@ class EventController {
     this.cancelEventOperation = cancelEventOperation;
     this.joinEventOperation = joinEventOperation;
     this.leaveEventOperation = leaveEventOperation;
+    this.kickParticipantOperation = kickParticipantOperation;
   }
 
   async createEvent(req, res) {
@@ -56,6 +58,11 @@ class EventController {
 
   async leaveEvent(req, res) {
     const result = await this.leaveEventOperation.execute(req.params.id, req.user.user_id);
+    res.status(200).json(result);
+  }
+
+  async kickParticipant(req, res) {
+    const result = await this.kickParticipantOperation.execute(req.params.id, req.body.userId, req.user.user_id);
     res.status(200).json(result);
   }
 }

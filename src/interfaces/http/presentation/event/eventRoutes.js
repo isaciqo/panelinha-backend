@@ -168,4 +168,36 @@ module.exports = [
       },
     },
   },
+  {
+    method: 'post',
+    path: '/events/:id/kick',
+    handler: 'eventController.kickParticipant',
+    middlewares: [authMiddleware],
+    validation: { params: eventSchemas.getById, body: eventSchemas.kick },
+    swagger: {
+      tags: ['Participation'],
+      summary: 'Remover participante do evento (apenas o criador, status open)',
+      security: [{ BearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['userId'],
+              properties: {
+                userId: { type: 'string', format: 'uuid' },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: { description: 'Participante removido, retorna evento atualizado' },
+        400: { description: 'NOT_PARTICIPANT | CREATOR_CANNOT_BE_KICKED | EVENT_NOT_OPEN' },
+        403: { description: 'NOT_CREATOR' },
+      },
+    },
+  },
 ];

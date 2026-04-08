@@ -19,6 +19,13 @@ class UpdateEventOperation {
       throw new AppError('INVALID_STATUS', 'Só é possível editar eventos com status "open"', 400);
     }
 
+    if (data.skillLevel !== undefined) {
+      const valid = data.skillLevel >= 0 && data.skillLevel <= 5 && data.skillLevel % 0.5 === 0;
+      if (!valid) {
+        throw new AppError('INVALID_SKILL_LEVEL', 'Nível deve ser entre 0 e 5 em incrementos de 0.5', 400);
+      }
+    }
+
     if (data.dateTime) {
       const eventDate = new Date(data.dateTime);
       if (eventDate <= new Date()) {
@@ -43,6 +50,7 @@ class UpdateEventOperation {
       dateTime: event.dateTime,
       pricePerPerson: event.pricePerPerson,
       preFilledPlayers: event.preFilledPlayers || 0,
+      skillLevel: event.skillLevel || 0,
       creatorId: event.creatorId,
       creatorName: event.creatorName,
       status: event.status,
