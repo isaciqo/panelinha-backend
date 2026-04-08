@@ -8,7 +8,7 @@ class RegisterOperation {
     this.tokenService = tokenService;
   }
 
-  async execute({ name, email, password }) {
+  async execute({ name, email, password, city }) {
     const existing = await this.userRepository.findByEmail(email);
     if (existing) {
       throw new AppError('EMAIL_ALREADY_EXISTS', 'Email já cadastrado', 409);
@@ -22,6 +22,7 @@ class RegisterOperation {
       name,
       email,
       password: hashedPassword,
+      ...(city ? { city } : {}),
     });
 
     const token = this.tokenService.generate({ user_id, email, name });
@@ -31,6 +32,7 @@ class RegisterOperation {
         id: user.user_id,
         name: user.name,
         email: user.email,
+        city: user.city || null,
         avatarUrl: user.avatarUrl || null,
         averageRating: user.averageRating,
         gamesCreated: user.gamesCreated,

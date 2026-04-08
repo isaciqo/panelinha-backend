@@ -17,6 +17,7 @@ class UpdateProfileOperation {
       id: updated.user_id,
       name: updated.name,
       email: updated.email,
+      city: updated.city || null,
       avatarUrl: updated.avatarUrl || null,
       averageRating: updated.averageRating,
       gamesCreated: updated.gamesCreated,

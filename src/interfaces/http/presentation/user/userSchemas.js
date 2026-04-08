@@ -13,5 +13,6 @@ module.exports = () => ({
 
   updateProfile: Joi.object({
     name: Joi.string().min(2).max(100).optional(),
+    city: Joi.string().min(2).max(100).optional(),
   }).min(1),
 });

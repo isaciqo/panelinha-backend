@@ -15,6 +15,7 @@ class GetUserOperation {
       id: user.user_id,
       name: user.name,
       email: user.email,
+      city: user.city || null,
       avatarUrl: user.avatarUrl || null,
       averageRating: user.averageRating,
       gamesCreated: user.gamesCreated,
