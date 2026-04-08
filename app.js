@@ -7,6 +7,7 @@ const connectDatabase = require('./src/database/connection');
 const container = require('./src/interfaces/http/container');
 const routerRegister = require('./src/interfaces/http/presentation/RouterRegister');
 const errorHandler = require('./src/interfaces/http/middlewares/errorHandler');
+const requestLogger = require('./src/interfaces/http/middlewares/requestLogger');
 const setupSwagger = require('./src/interfaces/http/presentation/swagger');
 
 const app = express();
@@ -28,6 +29,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(express.json({ limit: '10kb' }));
+app.use(requestLogger);
 
 setupSwagger(app);
 routerRegister(app, container);
