@@ -43,7 +43,12 @@ class EventRepository {
     const query = {};
 
     if (sport) query.sport = sport;
-    if (status) query.status = status;
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      query.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    } else {
+      query.status = { $in: ['open', 'confirmed'] };
+    }
     if (city) query.city = { $regex: city, $options: 'i' };
     if (excludeCreatorIds.length > 0) query.creatorId = { $nin: excludeCreatorIds };
     if (date) {
