@@ -7,12 +7,9 @@ class CreateEventOperation {
     this.userRepository = userRepository;
   }
 
-  async execute({ sport, totalPlayers, duration, clubName, location, city, dateTime, pricePerPerson, preFilledPlayers = 0, skillLevel = 0 }, creatorId) {
-    if (skillLevel !== 0) {
-      const valid = skillLevel >= 0 && skillLevel <= 5 && skillLevel % 0.5 === 0;
-      if (!valid) {
-        throw new AppError('INVALID_SKILL_LEVEL', 'Nível deve ser entre 0 e 5 em incrementos de 0.5', 400);
-      }
+  async execute({ sport, totalPlayers, duration, clubName, location, city, dateTime, pricePerPerson, preFilledPlayers = 0, skillLevel = '' }, creatorId) {
+    if (skillLevel !== '' && !['easy', 'medium', 'hard'].includes(skillLevel)) {
+      throw new AppError('INVALID_SKILL_LEVEL', 'Nível fora dos valores aceitos (easy, medium, hard)', 400);
     }
 
     const eventDate = new Date(dateTime);
@@ -72,7 +69,7 @@ class CreateEventOperation {
       dateTime: event.dateTime,
       pricePerPerson: event.pricePerPerson,
       preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || 0,
+      skillLevel: event.skillLevel || '',
       creatorId: event.creatorId,
       creatorName: event.creatorName,
       status: event.status,

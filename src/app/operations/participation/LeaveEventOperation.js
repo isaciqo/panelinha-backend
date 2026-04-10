@@ -60,7 +60,7 @@ class LeaveEventOperation {
       dateTime: event.dateTime,
       pricePerPerson: event.pricePerPerson,
       preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || 0,
+      skillLevel: event.skillLevel || '',
       creatorId: event.creatorId,
       creatorName: event.creatorName,
       status: event.status,
