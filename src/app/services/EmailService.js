@@ -3,7 +3,7 @@ class EmailService {
     if (process.env.RESEND_API_KEY) {
       const { Resend } = require('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: process.env.EMAIL_FROM || 'Panelinha <noreply@panelinha.app>',
         to: email,
         subject: 'Recuperação de senha - Panelinha',
@@ -14,6 +14,7 @@ class EmailService {
           <p>Se você não solicitou isso, ignore este email.</p>
         `,
       });
+      console.log('[EMAIL] Resend result:', JSON.stringify(result));
     } else {
       console.log(`[EMAIL DEV] Para: ${email} | Link: ${resetUrl}`);
     }
