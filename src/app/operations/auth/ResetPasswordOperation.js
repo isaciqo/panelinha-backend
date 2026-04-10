@@ -23,7 +23,10 @@ class ResetPasswordOperation {
     }
 
     const hashedPassword = await this.hashPasswordService.hash(password);
-    await this.userRepository.update(entry.userId, { password: hashedPassword });
+    await this.userRepository.update(entry.userId, {
+      password: hashedPassword,
+      $push: { passwordChangeLogs: { changedAt: new Date(), method: 'reset' } },
+    });
     await this.passwordResetTokenRepository.markUsed(entry.token_id);
   }
 }

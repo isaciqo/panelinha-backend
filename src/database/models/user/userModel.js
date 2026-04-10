@@ -11,6 +11,14 @@ const userSchema = new mongoose.Schema({
   gamesCreated: { type: Number, default: 0 },
   gamesParticipated: { type: Number, default: 0 },
   lastMinuteCancellations: { type: Number, default: 0 },
+  passwordChangeLogs: {
+    type: [{
+      changedAt: { type: Date, required: true },
+      method: { type: String, enum: ['reset'], required: true },
+    }],
+    default: [],
+    select: false,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
