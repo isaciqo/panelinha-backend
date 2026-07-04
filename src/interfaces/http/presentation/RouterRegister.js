@@ -2,6 +2,7 @@ const authRoutes = require('./auth/authRoutes');
 const userRoutes = require('./user/userRoutes');
 const eventRoutes = require('./event/eventRoutes');
 const feedbackRoutes = require('./feedback/feedbackRoutes');
+const supportRoutes = require('./support/supportRoutes');
 const validationMiddleware = require('../middlewares/validationMiddleware');
 
 const API_PREFIX = '/api/v1';
@@ -26,6 +27,7 @@ const routerRegister = (app, container) => {
   registerRoutes(app, userRoutes, container);
   registerRoutes(app, eventRoutes, container);
   registerRoutes(app, feedbackRoutes, container);
+  registerRoutes(app, supportRoutes, container);
 };
 
 module.exports = routerRegister;

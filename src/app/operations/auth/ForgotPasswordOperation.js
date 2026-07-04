@@ -27,7 +27,7 @@ class ForgotPasswordOperation {
       expiresAt,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     await this.emailService.sendPasswordReset(user.email, resetUrl);

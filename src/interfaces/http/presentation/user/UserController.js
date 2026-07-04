@@ -1,10 +1,11 @@
 class UserController {
-  constructor({ getUserOperation, listUsersOperation, updateProfileOperation, blockUserOperation, unblockUserOperation }) {
+  constructor({ getUserOperation, listUsersOperation, updateProfileOperation, blockUserOperation, unblockUserOperation, changePasswordOperation }) {
     this.getUserOperation = getUserOperation;
     this.listUsersOperation = listUsersOperation;
     this.updateProfileOperation = updateProfileOperation;
     this.blockUserOperation = blockUserOperation;
     this.unblockUserOperation = unblockUserOperation;
+    this.changePasswordOperation = changePasswordOperation;
   }
 
   async getUser(req, res) {
@@ -29,6 +30,11 @@ class UserController {
 
   async unblockUser(req, res) {
     await this.unblockUserOperation.execute(req.user.user_id, req.params.id);
+    res.status(204).send();
+  }
+
+  async changePassword(req, res) {
+    await this.changePasswordOperation.execute(req.user.user_id, req.body);
     res.status(204).send();
   }
 }

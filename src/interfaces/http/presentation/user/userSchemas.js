@@ -15,4 +15,9 @@ module.exports = () => ({
     name: Joi.string().min(2).max(100).optional(),
     city: Joi.string().min(2).max(100).optional(),
   }).min(1),
+
+  changePassword: Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required(),
+  }),
 });

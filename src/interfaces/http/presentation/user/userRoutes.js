@@ -80,6 +80,39 @@ module.exports = [
   },
   {
     method: 'patch',
+    path: '/users/me/password',
+    handler: 'userController.changePassword',
+    middlewares: [authMiddleware],
+    validation: { body: userSchemas.changePassword },
+    swagger: {
+      tags: ['Users'],
+      summary: 'Alterar senha do usuário autenticado',
+      security: [{ BearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['currentPassword', 'newPassword'],
+              properties: {
+                currentPassword: { type: 'string' },
+                newPassword: { type: 'string', minLength: 6 },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        204: { description: 'Senha alterada com sucesso' },
+        400: { description: 'INVALID_PASSWORD ou INVALID_INPUT' },
+        401: { description: 'UNAUTHORIZED' },
+        404: { description: 'USER_NOT_FOUND' },
+      },
+    },
+  },
+  {
+    method: 'patch',
     path: '/users/me',
     handler: 'userController.updateProfile',
     middlewares: [authMiddleware],
