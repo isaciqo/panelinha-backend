@@ -19,12 +19,22 @@ class FeedbackRepository {
     return { data, total };
   }
 
+  /** IDs de quem `fromUserId` já avaliou no evento. */
+  async findRatedUserIds(fromUserId, eventId) {
+    const rows = await Feedback.find({ fromUserId, eventId }).select('toUserId').lean();
+    return rows.map(r => r.toUserId);
+  }
+
   async getAverageRating(toUserId) {
     const result = await Feedback.aggregate([
       { $match: { toUserId } },
       { $group: { _id: null, avg: { $avg: '$rating' } } },
     ]);
     return result.length > 0 ? Math.round(result[0].avg * 10) / 10 : 0;
+  }
+
+  async renameUser(userId, name) {
+    await Feedback.updateMany({ fromUserId: userId }, { $set: { fromUserName: name } });
   }
 }
 

@@ -1,8 +1,11 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent } = require('../../utils/formatters');
 
 class KickParticipantOperation {
-  constructor({ eventRepository }) {
+  constructor({ eventRepository, participationRepository, userRepository }) {
     this.eventRepository = eventRepository;
+    this.participationRepository = participationRepository;
+    this.userRepository = userRepository;
   }
 
   async execute(event_id, targetUserId, requesterId) {
@@ -19,6 +22,10 @@ class KickParticipantOperation {
       throw new AppError('EVENT_NOT_OPEN', 'Só é possível remover participantes de eventos abertos', 400);
     }
 
+    if (new Date(event.dateTime) <= new Date()) {
+      throw new AppError('EVENT_ALREADY_STARTED', 'Esse jogo já começou', 400);
+    }
+
     if (targetUserId === event.creatorId) {
       throw new AppError('CREATOR_CANNOT_BE_KICKED', 'O criador não pode ser removido do evento', 400);
     }
@@ -33,29 +40,11 @@ class KickParticipantOperation {
       $addToSet: { kickedUsers: targetUserId },
     });
 
-    return this._format(updated);
-  }
+    // Removido não conta como participação (nem pode avaliar) e não leva penalidade
+    await this.participationRepository.markLeft(targetUserId, event_id, false);
+    await this.userRepository.update(targetUserId, { $inc: { gamesParticipated: -1 } });
 
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    return formatEvent(updated);
   }
 }
 

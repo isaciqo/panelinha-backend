@@ -62,6 +62,39 @@ module.exports = [
   },
   {
     method: 'get',
+    path: '/users/me/blocks',
+    handler: 'userController.listBlocks',
+    middlewares: [authMiddleware],
+    swagger: {
+      tags: ['Users'],
+      summary: 'Listar IDs dos usuários que eu bloqueei',
+      security: [{ BearerAuth: [] }],
+      responses: {
+        200: { description: '{ blockedIds: string[] }' },
+        401: { description: 'UNAUTHORIZED' },
+      },
+    },
+  },
+  {
+    method: 'get',
+    path: '/users/:id/events',
+    handler: 'userController.listUserEvents',
+    middlewares: [authMiddleware],
+    validation: { params: userSchemas.getById },
+    swagger: {
+      tags: ['Users'],
+      summary: 'Eventos criados ou com participação do usuário (todos os status, inclusive passados)',
+      security: [{ BearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+      responses: {
+        200: { description: '{ data: Event[] }' },
+        401: { description: 'UNAUTHORIZED' },
+        404: { description: 'USER_NOT_FOUND' },
+      },
+    },
+  },
+  {
+    method: 'get',
     path: '/users/:id',
     handler: 'userController.getUser',
     middlewares: [authMiddleware],
@@ -97,14 +130,14 @@ module.exports = [
               required: ['currentPassword', 'newPassword'],
               properties: {
                 currentPassword: { type: 'string' },
-                newPassword: { type: 'string', minLength: 6 },
+                newPassword: { type: 'string', minLength: 6, maxLength: 72 },
               },
             },
           },
         },
       },
       responses: {
-        204: { description: 'Senha alterada com sucesso' },
+        200: { description: 'Senha alterada. Retorna { token } novo — as outras sessões são encerradas' },
         400: { description: 'INVALID_PASSWORD ou INVALID_INPUT' },
         401: { description: 'UNAUTHORIZED' },
         404: { description: 'USER_NOT_FOUND' },

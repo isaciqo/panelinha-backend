@@ -1,4 +1,5 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent } = require('../../utils/formatters');
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
@@ -25,7 +26,12 @@ class LeaveEventOperation {
     }
 
     const msUntilEvent = new Date(event.dateTime) - new Date();
-    const penalty = msUntilEvent < THREE_HOURS_MS;
+    if (msUntilEvent <= 0 && event.status !== 'cancelled') {
+      throw new AppError('EVENT_ALREADY_STARTED', 'Esse jogo já começou — não dá mais pra sair', 400);
+    }
+
+    // Sair de jogo cancelado nunca gera penalidade
+    const penalty = event.status !== 'cancelled' && msUntilEvent < THREE_HOURS_MS;
 
     await this.participationRepository.markLeft(userId, event_id, penalty);
 
@@ -33,40 +39,21 @@ class LeaveEventOperation {
       $pull: { participants: { userId } },
     });
 
-    if (penalty) {
-      await this.userRepository.update(userId, { $inc: { lastMinuteCancellations: 1 } });
-    }
+    await this.userRepository.update(userId, {
+      $inc: {
+        gamesParticipated: -1,
+        ...(penalty ? { lastMinuteCancellations: 1 } : {}),
+      },
+    });
 
     const message = penalty
       ? 'Você saiu, mas recebeu uma penalidade por desistência em cima da hora.'
       : 'Você saiu da panelinha.';
 
     return {
-      event: this._format(updated),
+      event: formatEvent(updated),
       penalty,
       message,
-    };
-  }
-
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
     };
   }
 }

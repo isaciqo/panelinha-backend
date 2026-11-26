@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatUser } = require('../../utils/formatters');
 
 class RegisterOperation {
   constructor({ userRepository, hashPasswordService, tokenService }) {
@@ -25,21 +26,10 @@ class RegisterOperation {
       ...(city ? { city } : {}),
     });
 
-    const token = this.tokenService.generate({ user_id, email, name });
+    const token = this.tokenService.generate({ user_id, email: user.email, name: user.name });
 
     return {
-      user: {
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        city: user.city || null,
-        avatarUrl: user.avatarUrl || null,
-        averageRating: user.averageRating,
-        gamesCreated: user.gamesCreated,
-        gamesParticipated: user.gamesParticipated,
-        lastMinuteCancellations: user.lastMinuteCancellations,
-        createdAt: user.createdAt,
-      },
+      user: formatUser(user, { includeEmail: true }),
       token,
     };
   }

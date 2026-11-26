@@ -1,11 +1,16 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
 
 class ChangePasswordOperation {
-  constructor({ userRepository, hashPasswordService }) {
+  constructor({ userRepository, hashPasswordService, tokenService }) {
     this.userRepository = userRepository;
     this.hashPasswordService = hashPasswordService;
+    this.tokenService = tokenService;
   }
 
+  /**
+   * Troca a senha e invalida as outras sessões (via passwordChangedAt).
+   * Retorna um token novo para a sessão atual continuar logada.
+   */
   async execute(user_id, { currentPassword, newPassword }) {
     const user = await this.userRepository.findById(user_id);
     if (!user) {
@@ -18,7 +23,20 @@ class ChangePasswordOperation {
     }
 
     const hashed = await this.hashPasswordService.hash(newPassword);
-    await this.userRepository.update(user_id, { password: hashed });
+    const now = new Date();
+    await this.userRepository.update(user_id, {
+      password: hashed,
+      passwordChangedAt: now,
+      $push: { passwordChangeLogs: { changedAt: now, method: 'change' } },
+    });
+
+    const token = this.tokenService.generate({
+      user_id: user.user_id,
+      email: user.email,
+      name: user.name,
+    });
+
+    return { token };
   }
 }
 

@@ -1,8 +1,10 @@
+const { sanitize } = require('../utils/sanitize');
+
 const requestLogger = (req, res, next) => {
   const start = Date.now();
-  const { method, originalUrl, body, query } = req;
 
   res.on('finish', () => {
+    const { method, originalUrl, body, query } = req;
     const ms = Date.now() - start;
     const status = res.statusCode;
     const color = status >= 500 ? '\x1b[31m' : status >= 400 ? '\x1b[33m' : '\x1b[32m';
@@ -10,14 +12,12 @@ const requestLogger = (req, res, next) => {
 
     console.log(`${color}[${method}] ${originalUrl} → ${status} (${ms}ms)${reset}`);
 
-    if (Object.keys(query).length > 0) {
-      console.log('  query:', JSON.stringify(query));
+    if (query && Object.keys(query).length > 0) {
+      console.log('  query:', JSON.stringify(sanitize(query)));
     }
 
-    if (body && Object.keys(body).length > 0) {
-      const sanitized = { ...body };
-      if (sanitized.password) sanitized.password = '***';
-      console.log('  body:', JSON.stringify(sanitized));
+    if (body && typeof body === 'object' && Object.keys(body).length > 0) {
+      console.log('  body:', JSON.stringify(sanitize(body)));
     }
   });
 

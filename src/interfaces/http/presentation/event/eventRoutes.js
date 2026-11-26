@@ -18,7 +18,7 @@ module.exports = [
           'application/json': {
             schema: {
               type: 'object',
-              required: ['sport', 'totalPlayers', 'clubName', 'location', 'city', 'dateTime', 'pricePerPerson'],
+              required: ['sport', 'totalPlayers', 'duration', 'clubName', 'location', 'city', 'dateTime', 'pricePerPerson'],
               properties: {
                 sport: { type: 'string', enum: ['volleyball', 'football', 'basketball', 'tennis', 'other'] },
                 totalPlayers: { type: 'integer', minimum: 2, maximum: 50 },
@@ -28,6 +28,8 @@ module.exports = [
                 dateTime: { type: 'string', format: 'date-time' },
                 pricePerPerson: { type: 'number', minimum: 0 },
                 preFilledPlayers: { type: 'integer', minimum: 0, default: 0 },
+                duration: { type: 'integer', minimum: 15, maximum: 480 },
+                skillLevel: { type: 'string', enum: ['easy', 'medium', 'hard', ''] },
               },
             },
           },
@@ -35,7 +37,7 @@ module.exports = [
       },
       responses: {
         201: { description: 'Evento criado com sucesso' },
-        400: { description: 'INVALID_INPUT | PAST_DATE' },
+        400: { description: 'INVALID_INPUT | PAST_DATE | INVALID_CAPACITY' },
         401: { description: 'UNAUTHORIZED' },
       },
     },
@@ -53,8 +55,9 @@ module.exports = [
       parameters: [
         { in: 'query', name: 'sport', schema: { type: 'string', enum: ['volleyball', 'football', 'basketball', 'tennis', 'other'] } },
         { in: 'query', name: 'city', schema: { type: 'string' } },
-        { in: 'query', name: 'date', schema: { type: 'string' } },
-        { in: 'query', name: 'status', schema: { type: 'string', enum: ['open', 'confirmed', 'cancelled'] } },
+        { in: 'query', name: 'date', schema: { type: 'string', example: '2026-12-01' }, description: 'Dia no fuso do usuário (YYYY-MM-DD)' },
+        { in: 'query', name: 'tzOffset', schema: { type: 'integer', default: 180 }, description: 'Fuso em minutos, como Date#getTimezoneOffset (UTC-3 → 180)' },
+        { in: 'query', name: 'status', schema: { type: 'string', example: 'open,confirmed' }, description: 'Um ou mais status separados por vírgula. Padrão: open,confirmed. Só lista jogos futuros.' },
         { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
         { in: 'query', name: 'limit', schema: { type: 'integer', default: 20 } },
       ],
@@ -95,7 +98,7 @@ module.exports = [
       responses: {
         200: { description: 'Evento atualizado' },
         403: { description: 'NOT_CREATOR' },
-        400: { description: 'INVALID_STATUS | PAST_DATE' },
+        400: { description: 'INVALID_STATUS | PAST_DATE | INVALID_CAPACITY | EVENT_ALREADY_HAPPENED' },
       },
     },
   },
@@ -147,7 +150,8 @@ module.exports = [
       parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
       responses: {
         200: { description: 'Entrou no evento' },
-        400: { description: 'EVENT_FULL | ALREADY_PARTICIPANT | EVENT_NOT_OPEN' },
+        400: { description: 'EVENT_FULL | ALREADY_PARTICIPANT | EVENT_NOT_OPEN | EVENT_ALREADY_STARTED | USER_BLOCKED' },
+        403: { description: 'USER_KICKED' },
       },
     },
   },
@@ -164,7 +168,7 @@ module.exports = [
       parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
       responses: {
         200: { description: 'Saiu do evento. Campo penalty indica se houve penalidade.' },
-        400: { description: 'NOT_PARTICIPANT | CREATOR_CANNOT_LEAVE' },
+        400: { description: 'NOT_PARTICIPANT | CREATOR_CANNOT_LEAVE | EVENT_ALREADY_STARTED' },
       },
     },
   },

@@ -22,12 +22,20 @@ class ResetPasswordOperation {
       throw new AppError('TOKEN_EXPIRED', 'Token expirado', 400);
     }
 
+    // Marca como usado antes de trocar a senha: dois pedidos simultâneos com o mesmo token
+    // não conseguem ambos passar.
+    const claimed = await this.passwordResetTokenRepository.markUsedIfUnused(entry.token_id);
+    if (!claimed) {
+      throw new AppError('TOKEN_ALREADY_USED', 'Token já utilizado', 400);
+    }
+
     const hashedPassword = await this.hashPasswordService.hash(password);
+    const now = new Date();
     await this.userRepository.update(entry.userId, {
       password: hashedPassword,
-      $push: { passwordChangeLogs: { changedAt: new Date(), method: 'reset' } },
+      passwordChangedAt: now,
+      $push: { passwordChangeLogs: { changedAt: now, method: 'reset' } },
     });
-    await this.passwordResetTokenRepository.markUsed(entry.token_id);
   }
 }
 

@@ -1,4 +1,5 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent, isEventPast } = require('../../utils/formatters');
 
 class UpdateEventOperation {
   constructor({ eventRepository }) {
@@ -19,42 +20,37 @@ class UpdateEventOperation {
       throw new AppError('INVALID_STATUS', 'Só é possível editar eventos com status "open"', 400);
     }
 
+    if (isEventPast(event)) {
+      throw new AppError('EVENT_ALREADY_HAPPENED', 'Esse jogo já aconteceu', 400);
+    }
+
     if (data.skillLevel !== undefined && data.skillLevel !== '' && !['easy', 'medium', 'hard'].includes(data.skillLevel)) {
       throw new AppError('INVALID_SKILL_LEVEL', 'Nível fora dos valores aceitos (easy, medium, hard)', 400);
     }
 
-    if (data.dateTime) {
-      const eventDate = new Date(data.dateTime);
+    const updates = { ...data };
+
+    if (updates.dateTime) {
+      const eventDate = new Date(updates.dateTime);
       if (eventDate <= new Date()) {
         throw new AppError('PAST_DATE', 'A data/hora do evento deve ser no futuro', 400);
       }
-      data.dateTime = eventDate;
+      updates.dateTime = eventDate;
     }
 
-    const updated = await this.eventRepository.update(event_id, data);
-    return this._format(updated);
-  }
+    const totalPlayers = updates.totalPlayers ?? event.totalPlayers;
+    const preFilled = updates.preFilledPlayers ?? event.preFilledPlayers ?? 0;
+    const joined = event.participants.length;
+    if (joined + preFilled > totalPlayers) {
+      throw new AppError(
+        'INVALID_CAPACITY',
+        `Já tem ${joined} inscrito(s) + ${preFilled} fechado(s) por fora: o total não pode ser menor que ${joined + preFilled}`,
+        400,
+      );
+    }
 
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    const updated = await this.eventRepository.update(event_id, updates);
+    return formatEvent(updated);
   }
 }
 

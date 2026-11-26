@@ -1,3 +1,6 @@
+const { sanitize } = require('../utils/sanitize');
+
+// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   const { method, originalUrl, body } = req;
   const context = `[${method}] ${originalUrl}`;
@@ -10,18 +13,28 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Erros do express.json(): JSON malformado ou corpo grande demais
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'INVALID_JSON', message: 'JSON inválido no corpo da requisição' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'PAYLOAD_TOO_LARGE', message: 'Corpo da requisição muito grande' });
+  }
+
   if (err.isJoi || err.name === 'ValidationError') {
     const details = err.details ? err.details.map(d => d.message) : [err.message];
-    const sanitized = { ...body };
-    if (sanitized.password) sanitized.password = '***';
     console.warn(`\x1b[33m[Validation] ${context}\x1b[0m`);
-    console.warn('  body:', JSON.stringify(sanitized));
+    console.warn('  body:', JSON.stringify(sanitize(body || {})));
     console.warn('  details:', details);
     return res.status(400).json({
       error: 'INVALID_INPUT',
       message: 'Dados inválidos',
       details,
     });
+  }
+
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: 'INVALID_INPUT', message: 'Dados inválidos' });
   }
 
   if (err.code === 11000) {

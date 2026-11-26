@@ -1,4 +1,5 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent, isEventPast } = require('../../utils/formatters');
 
 class CancelEventOperation {
   constructor({ eventRepository }) {
@@ -19,30 +20,12 @@ class CancelEventOperation {
       throw new AppError('INVALID_STATUS', 'O evento já está cancelado', 400);
     }
 
-    const updated = await this.eventRepository.update(event_id, { status: 'cancelled' });
-    return this._format(updated);
-  }
+    if (isEventPast(event)) {
+      throw new AppError('EVENT_ALREADY_HAPPENED', 'Esse jogo já aconteceu e não pode ser cancelado', 400);
+    }
 
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    const updated = await this.eventRepository.update(event_id, { status: 'cancelled' });
+    return formatEvent(updated);
   }
 }
 

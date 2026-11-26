@@ -1,20 +1,46 @@
 const jwt = require('jsonwebtoken');
+const User = require('../../../database/models/user/userModel');
 
-const authMiddleware = (req, res, next) => {
+const unauthorized = (res, message) =>
+  res.status(401).json({ error: 'UNAUTHORIZED', message });
+
+/**
+ * Valida o JWT e confirma que o usuário ainda existe e não trocou a senha
+ * depois que o token foi emitido (troca/reset de senha derruba sessões antigas).
+ */
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Token de autorização ausente' });
+    return unauthorized(res, 'Token de autorização ausente');
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.slice('Bearer '.length).trim();
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return unauthorized(res, 'Token inválido ou expirado');
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ user_id: decoded.user_id })
+      .select('user_id passwordChangedAt')
+      .lean();
+
+    if (!user) {
+      return unauthorized(res, 'Usuário não encontrado');
+    }
+
+    if (user.passwordChangedAt && decoded.iat < Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)) {
+      return unauthorized(res, 'Sessão expirada após troca de senha. Entre novamente.');
+    }
+
     req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Token inválido ou expirado' });
+    return next();
+  } catch (err) {
+    return next(err);
   }
 };
 

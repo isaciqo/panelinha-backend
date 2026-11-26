@@ -21,7 +21,8 @@ services:
     image: mongo:7
     container_name: panelinha_mongo
     ports:
-      - "27017:27017"
+      # Só acessível nesta máquina (o Mongo roda sem autenticação)
+      - "127.0.0.1:27017:27017"
     environment:
       - MONGO_INITDB_DATABASE=panelinha_db
     volumes:
@@ -38,7 +39,8 @@ services:
     image: mongo-express:latest
     container_name: panelinha_mongo_express
     ports:
-      - "8081:8081"
+      # Só acessível nesta máquina
+      - "127.0.0.1:8081:8081"
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}

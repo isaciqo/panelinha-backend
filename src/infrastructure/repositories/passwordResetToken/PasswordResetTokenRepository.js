@@ -14,9 +14,10 @@ class PasswordResetTokenRepository {
     return PasswordResetToken.deleteMany({ userId });
   }
 
-  async markUsed(token_id) {
+  /** Marca como usado só se ainda não foi usado. Retorna null se outro pedido usou antes. */
+  async markUsedIfUnused(token_id) {
     return PasswordResetToken.findOneAndUpdate(
-      { token_id },
+      { token_id, usedAt: null },
       { usedAt: new Date() },
       { new: true },
     );

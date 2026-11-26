@@ -20,7 +20,8 @@ module.exports = [
               properties: {
                 name: { type: 'string', minLength: 2, maxLength: 100, example: 'Carlos Silva' },
                 email: { type: 'string', format: 'email', example: 'carlos@email.com' },
-                password: { type: 'string', minLength: 6, example: 'senha123' },
+                password: { type: 'string', minLength: 6, maxLength: 72, example: 'senha123' },
+                city: { type: 'string', minLength: 2, maxLength: 100, example: 'São Paulo' },
               },
             },
           },
@@ -140,7 +141,7 @@ module.exports = [
               required: ['token', 'password'],
               properties: {
                 token: { type: 'string', example: 'abc123...' },
-                password: { type: 'string', minLength: 6, example: 'novaSenha123' },
+                password: { type: 'string', minLength: 6, maxLength: 72, example: 'novaSenha123' },
               },
             },
           },
@@ -148,7 +149,7 @@ module.exports = [
       },
       responses: {
         200: { description: 'Senha redefinida com sucesso' },
-        400: { description: 'TOKEN_EXPIRED | TOKEN_ALREADY_USED | WEAK_PASSWORD' },
+        400: { description: 'TOKEN_EXPIRED | TOKEN_ALREADY_USED | INVALID_INPUT' },
         404: { description: 'INVALID_TOKEN — Token não encontrado' },
       },
     },

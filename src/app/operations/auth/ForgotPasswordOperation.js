@@ -1,6 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
-const AppError = require('../../../interfaces/http/errors/AppError');
 
 class ForgotPasswordOperation {
   constructor({ userRepository, passwordResetTokenRepository, emailService }) {
@@ -9,11 +8,13 @@ class ForgotPasswordOperation {
     this.emailService = emailService;
   }
 
+  /**
+   * Sempre termina sem erro para quem chama: responder diferente para email
+   * inexistente (ou falha de envio) permitiria descobrir quem tem conta.
+   */
   async execute({ email }) {
     const user = await this.userRepository.findByEmail(email);
-    if (!user) {
-      throw new AppError('EMAIL_NOT_FOUND', 'Email não cadastrado', 404);
-    }
+    if (!user) return;
 
     await this.passwordResetTokenRepository.invalidateByUserId(user.user_id);
 
@@ -27,10 +28,14 @@ class ForgotPasswordOperation {
       expiresAt,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:8080').replace(/\/+$/, '');
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
-    await this.emailService.sendPasswordReset(user.email, resetUrl);
+    try {
+      await this.emailService.sendPasswordReset(user.email, resetUrl);
+    } catch (err) {
+      console.error('[ForgotPassword] Falha ao enviar email de recuperação:', err.message);
+    }
   }
 }
 

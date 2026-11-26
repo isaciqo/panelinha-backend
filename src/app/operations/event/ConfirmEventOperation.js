@@ -1,4 +1,5 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent } = require('../../utils/formatters');
 
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 
@@ -27,29 +28,7 @@ class ConfirmEventOperation {
     }
 
     const updated = await this.eventRepository.update(event_id, { status: 'confirmed' });
-    return this._format(updated);
-  }
-
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    return formatEvent(updated);
   }
 }
 

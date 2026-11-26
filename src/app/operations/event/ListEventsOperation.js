@@ -4,9 +4,9 @@ class ListEventsOperation {
     this.userBlockRepository = userBlockRepository;
   }
 
-  async execute({ page = 1, limit = 20, sport, city, date, status } = {}, requesterId) {
-    const safePage = Math.max(Number(page), 1);
-    const safeLimit = Math.min(Number(limit), 100);
+  async execute({ page = 1, limit = 20, sport, city, date, status, tzOffset } = {}, requesterId) {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
 
     const blockedIds = requesterId
       ? await this.userBlockRepository.getBlockedIdsBidirectional(requesterId)
@@ -19,6 +19,7 @@ class ListEventsOperation {
       city,
       date,
       status,
+      ...(tzOffset !== undefined ? { tzOffset: Number(tzOffset) } : {}),
       excludeCreatorIds: blockedIds,
     });
 

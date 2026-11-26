@@ -31,7 +31,8 @@ module.exports = [
       },
       responses: {
         201: { description: 'Avaliação criada com sucesso' },
-        400: { description: 'INVALID_RATING | SELF_FEEDBACK | DUPLICATE_FEEDBACK | NOT_PARTICIPANT' },
+        400: { description: 'SELF_FEEDBACK | DUPLICATE_FEEDBACK | NOT_PARTICIPANT | EVENT_CANCELLED | EVENT_NOT_FINISHED' },
+        404: { description: 'EVENT_NOT_FOUND' },
         401: { description: 'UNAUTHORIZED' },
       },
     },
@@ -53,6 +54,23 @@ module.exports = [
       ],
       responses: {
         200: { description: 'Lista paginada de avaliações' },
+        401: { description: 'UNAUTHORIZED' },
+      },
+    },
+  },
+  {
+    method: 'get',
+    path: '/feedback/given/:eventId',
+    handler: 'feedbackController.listGiven',
+    middlewares: [authMiddleware],
+    validation: { params: feedbackSchemas.getEventId },
+    swagger: {
+      tags: ['Feedback'],
+      summary: 'Quem eu já avaliei neste evento',
+      security: [{ BearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'eventId', required: true, schema: { type: 'string', format: 'uuid' } }],
+      responses: {
+        200: { description: '{ ratedUserIds: string[] }' },
         401: { description: 'UNAUTHORIZED' },
       },
     },

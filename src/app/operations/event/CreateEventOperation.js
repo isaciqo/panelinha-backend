@@ -1,10 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent } = require('../../utils/formatters');
 
 class CreateEventOperation {
-  constructor({ eventRepository, userRepository }) {
+  constructor({ eventRepository, userRepository, participationRepository }) {
     this.eventRepository = eventRepository;
     this.userRepository = userRepository;
+    this.participationRepository = participationRepository;
   }
 
   async execute({ sport, totalPlayers, duration, clubName, location, city, dateTime, pricePerPerson, preFilledPlayers = 0, skillLevel = '' }, creatorId) {
@@ -15,6 +17,11 @@ class CreateEventOperation {
     const eventDate = new Date(dateTime);
     if (eventDate <= new Date()) {
       throw new AppError('PAST_DATE', 'A data/hora do evento deve ser no futuro', 400);
+    }
+
+    // O criador ocupa uma vaga
+    if (preFilledPlayers + 1 > totalPlayers) {
+      throw new AppError('INVALID_CAPACITY', 'Jogadores já fechados + você não podem passar do total de vagas', 400);
     }
 
     const creator = await this.userRepository.findById(creatorId);
@@ -50,33 +57,14 @@ class CreateEventOperation {
       ],
     });
 
+    // O criador também é participante: precisa do registro para avaliar e ser avaliado
+    await this.participationRepository.upsertJoin(creatorId, event_id, now);
+
     await this.userRepository.update(creatorId, {
       $inc: { gamesCreated: 1, gamesParticipated: 1 },
     });
 
-    return this._format(event);
-  }
-
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    return formatEvent(event);
   }
 }
 

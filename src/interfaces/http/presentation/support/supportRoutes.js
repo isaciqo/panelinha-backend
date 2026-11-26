@@ -3,8 +3,8 @@ const authMiddleware = require('../../middlewares/authMiddleware');
 
 const sendSchema = Joi.object({
   type: Joi.string().valid('support', 'suggestion').required(),
-  subject: Joi.string().min(1).max(100).required(),
-  message: Joi.string().min(1).max(1000).required(),
+  subject: Joi.string().trim().min(1).max(100).required(),
+  message: Joi.string().trim().min(1).max(1000).required(),
 });
 
 module.exports = [
@@ -37,7 +37,9 @@ module.exports = [
       responses: {
         200: { description: 'Solicitação enviada com sucesso' },
         401: { description: 'UNAUTHORIZED' },
+        429: { description: 'TOO_MANY_REQUESTS' },
         500: { description: 'SUPPORT_EMAIL_NOT_CONFIGURED' },
+        502: { description: 'SUPPORT_SEND_FAILED — email não pôde ser enviado' },
       },
     },
   },

@@ -1,4 +1,5 @@
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatEvent } = require('../../utils/formatters');
 
 class GetEventOperation {
   constructor({ eventRepository }) {
@@ -10,29 +11,7 @@ class GetEventOperation {
     if (!event) {
       throw new AppError('EVENT_NOT_FOUND', 'Evento não encontrado', 404);
     }
-    return this._format(event);
-  }
-
-  _format(event) {
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-    };
+    return formatEvent(event);
   }
 }
 

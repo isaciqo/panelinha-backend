@@ -9,6 +9,7 @@ const passwordResetTokenSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 passwordResetTokenSchema.index({ userId: 1 });
-passwordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// Mantém o token 24h após expirar para conseguirmos responder TOKEN_EXPIRED; depois o Mongo apaga.
+passwordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
 
 module.exports = mongoose.model('PasswordResetToken', passwordResetTokenSchema);

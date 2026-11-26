@@ -3,12 +3,13 @@ const authRoutes = require('./auth/authRoutes');
 const userRoutes = require('./user/userRoutes');
 const eventRoutes = require('./event/eventRoutes');
 const feedbackRoutes = require('./feedback/feedbackRoutes');
+const supportRoutes = require('./support/supportRoutes');
 
 const API_PREFIX = '/api/v1';
 
 const buildSwaggerSpec = () => {
   const paths = {};
-  const allRoutes = [...authRoutes, ...userRoutes, ...eventRoutes, ...feedbackRoutes];
+  const allRoutes = [...authRoutes, ...userRoutes, ...eventRoutes, ...feedbackRoutes, ...supportRoutes];
 
   allRoutes.forEach(route => {
     const swaggerPath = `${API_PREFIX}${route.path}`.replace(/:(\w+)/g, '{$1}');

@@ -1,10 +1,11 @@
 const { v4: uuidv4 } = require('uuid');
 const AppError = require('../../../interfaces/http/errors/AppError');
+const { formatFeedback, isEventPast } = require('../../utils/formatters');
 
 class CreateFeedbackOperation {
-  constructor({ feedbackRepository, participationRepository, userRepository }) {
+  constructor({ feedbackRepository, eventRepository, userRepository }) {
     this.feedbackRepository = feedbackRepository;
-    this.participationRepository = participationRepository;
+    this.eventRepository = eventRepository;
     this.userRepository = userRepository;
   }
 
@@ -13,12 +14,22 @@ class CreateFeedbackOperation {
       throw new AppError('SELF_FEEDBACK', 'Você não pode avaliar a si mesmo', 400);
     }
 
-    const [fromParticipated, toParticipated] = await Promise.all([
-      this.participationRepository.hasParticipated(fromUserId, eventId),
-      this.participationRepository.hasParticipated(toUserId, eventId),
-    ]);
+    const event = await this.eventRepository.findById(eventId);
+    if (!event) {
+      throw new AppError('EVENT_NOT_FOUND', 'Evento não encontrado', 404);
+    }
 
-    if (!fromParticipated || !toParticipated) {
+    if (event.status === 'cancelled') {
+      throw new AppError('EVENT_CANCELLED', 'Não dá pra avaliar um jogo cancelado', 400);
+    }
+
+    if (!isEventPast(event)) {
+      throw new AppError('EVENT_NOT_FINISHED', 'Só dá pra avaliar depois que o jogo terminar', 400);
+    }
+
+    // O elenco final do evento é a fonte da verdade: quem saiu ou foi removido não está nele
+    const inRoster = id => event.participants.some(p => p.userId === id);
+    if (!inRoster(fromUserId) || !inRoster(toUserId)) {
       throw new AppError('NOT_PARTICIPANT', 'Ambos os usuários devem ter participado do evento', 400);
     }
 
@@ -28,6 +39,9 @@ class CreateFeedbackOperation {
     }
 
     const fromUser = await this.userRepository.findById(fromUserId);
+    if (!fromUser) {
+      throw new AppError('USER_NOT_FOUND', 'Usuário não encontrado', 404);
+    }
 
     const feedback = await this.feedbackRepository.create({
       feedback_id: uuidv4(),
@@ -42,16 +56,7 @@ class CreateFeedbackOperation {
     const newAvg = await this.feedbackRepository.getAverageRating(toUserId);
     await this.userRepository.update(toUserId, { averageRating: newAvg });
 
-    return {
-      id: feedback.feedback_id,
-      fromUserId: feedback.fromUserId,
-      fromUserName: feedback.fromUserName,
-      toUserId: feedback.toUserId,
-      eventId: feedback.eventId,
-      rating: feedback.rating,
-      comment: feedback.comment,
-      createdAt: feedback.createdAt,
-    };
+    return formatFeedback(feedback);
   }
 }
 

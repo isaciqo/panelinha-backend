@@ -1,3 +1,5 @@
+const { formatUser } = require('../../utils/formatters');
+
 class LoginOperation {
   constructor({ validateLoginService, tokenService }) {
     this.validateLoginService = validateLoginService;
@@ -14,18 +16,7 @@ class LoginOperation {
     });
 
     return {
-      user: {
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        city: user.city || null,
-        avatarUrl: user.avatarUrl || null,
-        averageRating: user.averageRating,
-        gamesCreated: user.gamesCreated,
-        gamesParticipated: user.gamesParticipated,
-        lastMinuteCancellations: user.lastMinuteCancellations,
-        createdAt: user.createdAt,
-      },
+      user: formatUser(user, { includeEmail: true }),
       token,
     };
   }

@@ -1,30 +1,11 @@
 const Event = require('../../../database/models/event/eventModel');
+const { formatEvent } = require('../../../app/utils/formatters');
+const { escapeRegex } = require('../../../app/utils/escape');
+
+// Brasil não tem horário de verão desde 2019: UTC-3 (180 min) é o padrão sensato.
+const DEFAULT_TZ_OFFSET_MIN = 180;
 
 class EventRepository {
-  _format(event) {
-    if (!event) return null;
-    return {
-      id: event.event_id,
-      sport: event.sport,
-      totalPlayers: event.totalPlayers,
-      duration: event.duration,
-      clubName: event.clubName,
-      location: event.location,
-      city: event.city,
-      dateTime: event.dateTime,
-      pricePerPerson: event.pricePerPerson,
-      preFilledPlayers: event.preFilledPlayers || 0,
-      skillLevel: event.skillLevel || '',
-      creatorId: event.creatorId,
-      creatorName: event.creatorName,
-      status: event.status,
-      participants: event.participants,
-      kickedUsers: event.kickedUsers || [],
-      createdAt: event.createdAt,
-      updatedAt: event.updatedAt,
-    };
-  }
-
   async findById(event_id) {
     return Event.findOne({ event_id });
   }
@@ -35,10 +16,46 @@ class EventRepository {
   }
 
   async update(event_id, data) {
-    return Event.findOneAndUpdate({ event_id }, data, { new: true });
+    return Event.findOneAndUpdate({ event_id }, data, { new: true, runValidators: true });
   }
 
-  async findAll({ page = 1, limit = 20, sport, city, date, status, excludeCreatorIds = [] } = {}) {
+  /**
+   * Adiciona o participante apenas se, no momento da escrita, o evento ainda estiver
+   * aberto, no futuro, com vaga, e o usuário não estiver nem dentro nem removido.
+   * Evita overbooking quando duas pessoas entram ao mesmo tempo na última vaga.
+   * Retorna null se alguma condição falhar.
+   */
+  async addParticipantIfAvailable(event_id, participant) {
+    return Event.findOneAndUpdate(
+      {
+        event_id,
+        status: 'open',
+        dateTime: { $gt: new Date() },
+        'participants.userId': { $ne: participant.userId },
+        kickedUsers: { $ne: participant.userId },
+        $expr: {
+          $lt: [
+            { $add: [{ $size: '$participants' }, { $ifNull: ['$preFilledPlayers', 0] }] },
+            '$totalPlayers',
+          ],
+        },
+      },
+      { $push: { participants: participant } },
+      { new: true },
+    );
+  }
+
+  async findAll({
+    page = 1,
+    limit = 20,
+    sport,
+    city,
+    date,
+    status,
+    tzOffset = DEFAULT_TZ_OFFSET_MIN,
+    includePast = false,
+    excludeCreatorIds = [],
+  } = {}) {
     const skip = (page - 1) * limit;
     const query = {};
 
@@ -49,14 +66,25 @@ class EventRepository {
     } else {
       query.status = { $in: ['open', 'confirmed'] };
     }
-    if (city) query.city = { $regex: city, $options: 'i' };
+    if (city) query.city = { $regex: escapeRegex(city), $options: 'i' };
     if (excludeCreatorIds.length > 0) query.creatorId = { $nin: excludeCreatorIds };
+
+    let rangeStart;
+    let rangeEnd;
     if (date) {
-      const start = new Date(date);
-      start.setUTCHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setUTCHours(23, 59, 59, 999);
-      query.dateTime = { $gte: start, $lte: end };
+      // `date` é o dia no fuso do usuário; tzOffset segue Date#getTimezoneOffset (UTC-3 → 180)
+      const [y, m, d] = date.split('-').map(Number);
+      rangeStart = new Date(Date.UTC(y, m - 1, d) + tzOffset * 60 * 1000);
+      rangeEnd = new Date(rangeStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+    }
+    if (!includePast) {
+      const now = new Date();
+      if (!rangeStart || rangeStart < now) rangeStart = now;
+    }
+    if (rangeStart || rangeEnd) {
+      query.dateTime = {};
+      if (rangeStart) query.dateTime.$gte = rangeStart;
+      if (rangeEnd) query.dateTime.$lte = rangeEnd;
     }
 
     const [data, total] = await Promise.all([
@@ -64,7 +92,30 @@ class EventRepository {
       Event.countDocuments(query),
     ]);
 
-    return { data: data.map(e => this._format(e)), total };
+    return { data: data.map(formatEvent), total };
+  }
+
+  /** Eventos que o usuário criou ou dos quais participa (todos os status, inclusive passados). */
+  async findByUser(userId, { limit = 100 } = {}) {
+    const data = await Event.find({
+      $or: [{ creatorId: userId }, { 'participants.userId': userId }],
+    })
+      .sort({ dateTime: -1 })
+      .limit(limit)
+      .lean();
+    return data.map(formatEvent);
+  }
+
+  /** Atualiza o nome copiado (desnormalizado) do usuário nos eventos. */
+  async renameUser(userId, name) {
+    await Promise.all([
+      Event.updateMany({ creatorId: userId }, { $set: { creatorName: name } }),
+      Event.updateMany(
+        { 'participants.userId': userId },
+        { $set: { 'participants.$[p].userName': name } },
+        { arrayFilters: [{ 'p.userId': userId }] },
+      ),
+    ]);
   }
 }
 

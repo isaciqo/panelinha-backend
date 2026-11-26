@@ -1,7 +1,8 @@
 class FeedbackController {
-  constructor({ createFeedbackOperation, listFeedbackOperation }) {
+  constructor({ createFeedbackOperation, listFeedbackOperation, listGivenFeedbackOperation }) {
     this.createFeedbackOperation = createFeedbackOperation;
     this.listFeedbackOperation = listFeedbackOperation;
+    this.listGivenFeedbackOperation = listGivenFeedbackOperation;
   }
 
   async createFeedback(req, res) {
@@ -11,6 +12,11 @@ class FeedbackController {
 
   async listFeedback(req, res) {
     const result = await this.listFeedbackOperation.execute(req.params.userId, req.query);
+    res.status(200).json(result);
+  }
+
+  async listGiven(req, res) {
+    const result = await this.listGivenFeedbackOperation.execute(req.params.eventId, req.user.user_id);
     res.status(200).json(result);
   }
 }
